@@ -1,0 +1,36 @@
+version: '3.9'
+services:
+  backend:
+    build: ./backend
+    ports: ["5000:5000"]
+    environment:
+      - NODE_ENV=production
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://postgres:apexbypass@postgres:5432/apex
+      - OLLAMA_URL=http://ollama:11434
+    depends_on: [redis, postgres, ollama]
+    restart: unless-stopped
+  frontend:
+    build: ./frontend
+    ports: ["3000:3000"]
+    depends_on: [backend]
+    restart: unless-stopped
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_PASSWORD=apexbypass
+      - POSTGRES_DB=apex
+    volumes: ["./postgres-init.sql:/docker-entrypoint-initdb.d/init.sql"]
+    restart: unless-stopped
+  ollama:
+    image: ollama/ollama:latest
+    ports: ["11434:11434"]
+    restart: unless-stopped
+  playwright:
+    build: ./playwright
+    deploy:
+      replicas: 8
+    restart: unless-stopped
